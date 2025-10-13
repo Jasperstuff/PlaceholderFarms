@@ -43,6 +43,30 @@ h1 {
   margin: 6px 0;
 }
 
+/* ------------Corn */ 
+
+corn: {
+  name: "Corn",
+  emoji: "🌽",
+  amount: 0,
+  autoHarvesters: 0,
+  harvesterCost: 100,
+  unlocked: false,
+  autoHarvestRate: 2500,
+  theme: {
+    bg: "linear-gradient(to bottom, #fff3b0, #ffe680)",      // softer light yellow → gold
+    panel: "#fff8c2",                                        // light golden panel
+    border: "#f1d65e",                                       // medium gold border
+    text: "#5a4419",                                         // darker brown text
+    button: "#e0b82e",                                       // gold buttons
+    hover: "#d6a71f",                                        // slightly darker hover
+    accent: "#fdd36a"                                        // golden accent for switch button
+  }
+}
+
+
+/* ------------Buttons */
+
 button {
   background: var(--button-color);
   border: none;
@@ -53,19 +77,26 @@ button {
   color: #fff;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.3s ease;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+button:active {
+  transform: scale(0.97);
 }
 
 button:hover {
   background: var(--button-hover);
   transform: scale(1.05);
+  box-shadow: 0 0 6px rgba(0,0,0,0.15);
 }
 
 button:disabled {
-  background: #bbb;
+  background: #function applyThemebbb;
   cursor: not-allowed;
   transform: none;
 }
+
+/* ------------Crops */
 
 #switch-crop {
   background: var(--accent-color);
@@ -82,18 +113,52 @@ button:disabled {
   transition: color 1s ease;
 }
 
+/* ------------Save */
+
+#saveNotice {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.8);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+#saveNotice.show {
+  opacity: 1;
+}
+
+/* ------------Log */
+
 #log {
   margin-top: 30px;
-  font-size: 14px;
+  font-size: 16px;
   text-align: left;
   background: #efe9ce;
   border-radius: 5px;
   padding: 10px;
-  height: 120px;
-  width: 320px;
+  height: 240px;
+  width: 480px;
   overflow-y: auto;
   margin-left: auto;
   margin-right: auto;
   transition: background 1s ease;
+}
+
+.log-entry {
+  position: relative;
+  padding-left: 20px; /* space for the dot */
+  border-left: 3px solid transparent;
+  margin-bottom: 4px;
+}
+
+.log-entry::before {
+  content: attr(data-dot); /* will hold the emoji */
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
