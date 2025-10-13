@@ -1,0 +1,99 @@
+:root {
+  /* Default: Wheat Theme */
+  --bg-color: linear-gradient(to bottom, #e3d8b2, #d2c498);
+  --panel-color: #f7f1dc;
+  --border-color: #bda96b;
+  --text-color: #3a2e1f;
+  --button-color: #88c057;
+  --button-hover: #7ab14f;
+  --accent-color: #f1b24a;
+}
+
+body {
+  font-family: 'Courier New', monospace;
+  background: var(--bg-color);
+  color: var(--text-color);
+  text-align: center;
+  padding: 50px;
+  margin: 0;
+  transition: background 1s ease, color 1s ease;
+}
+
+main {
+  background: var(--panel-color);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  display: inline-block;
+  padding: 30px 60px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: background 1s ease, border-color 1s ease;
+}
+
+h1 {
+  margin-bottom: 25px;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+#status {
+  margin-bottom: 20px;
+}
+
+#crop-count, #harvester-count {
+  font-size: 20px;
+  margin: 6px 0;
+}
+
+button {
+  background: var(--button-color);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 25px;
+  margin: 8px;
+  font-size: 18px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.3s ease;
+}
+
+button:hover {
+  background: var(--button-hover);
+  transform: scale(1.05);
+}
+
+button:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#switch-crop {
+  background: var(--accent-color);
+}
+
+#switch-crop:hover {
+  filter: brightness(0.9);
+}
+
+#current-crop {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: var(--text-color);
+  transition: color 1s ease;
+}
+
+#log {
+  margin-top: 30px;
+  font-size: 14px;
+  text-align: left;
+  background: #efe9ce;
+  border-radius: 5px;
+  padding: 10px;
+  height: 120px;
+  width: 320px;
+  overflow-y: auto;
+  margin-left: auto;
+  margin-right: auto;
+  transition: background 1s ease;
+}
+
