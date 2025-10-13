@@ -50,12 +50,6 @@ const switchCropBtn = document.getElementById('switch-crop');
 const log = document.getElementById('log');
 
 // ==== CORE FUNCTIONS ====
-function showSaveNotice() {
-  const notice = document.getElementById("saveNotice");
-  notice.classList.add("show");
-  setTimeout(() => notice.classList.remove("show"), 1500);
-}
-
 harvestBtn.addEventListener('click', () => {
   crops[currentCrop].amount++;
   checkUnlocks();
@@ -144,15 +138,9 @@ function applyTheme(theme) {
   root.style.setProperty('--button-color', theme.button);
   root.style.setProperty('--button-hover', theme.hover);
   root.style.setProperty('--accent-color', theme.accent);
-  
-  const logEl = document.getElementById('log');
-  logEl.style.background = theme.panel + "cc";
 }
 
 // ==== INIT ====
 applyTheme(crops[currentCrop].theme);
 updateUI();
-
-// ==== SAVE ON EXIT ==== 
-window.addEventListener("beforeunload", saveProgress);
 
