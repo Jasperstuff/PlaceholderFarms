@@ -270,4 +270,3 @@ function loadGame() {
 loadGame();
 applyTheme(crops[currentCrop].theme);
 updateUI();
-
