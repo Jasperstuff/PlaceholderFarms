@@ -121,12 +121,83 @@ function updateUI() {
 }
 
 // ==== LOG ====
+const minOpacity = 0.1; // minimum opacity for oldest entry
+const maxOpacity = 1;   // opacity for newest entry
+const baseFadeSpeed = 0.002; // amount to reduce opacity per frame
+
+let permanentLog = [];
+
 function logMessage(msg) {
   const entry = document.createElement('div');
+  entry.classList.add('log-entry');
+  entry.style.opacity = maxOpacity; // start fully visible
   entry.textContent = msg;
   log.prepend(entry);
   if (log.children.length > 20) log.removeChild(log.lastChild);
 }
+
+// Cascading fade function
+function fadeLogEntries() {
+  const entries = Array.from(log.children);
+  entries.forEach((entry, index) => {
+    let currentOpacity = parseFloat(entry.style.opacity);
+    if (isNaN(currentOpacity)) currentOpacity = maxOpacity;
+
+    // Older entries fade faster (index = 0 is newest, highest index is oldest)
+    const fadeMultiplier = 1 + (index / entries.length) * 2; // older = faster
+    currentOpacity -= baseFadeSpeed * fadeMultiplier;
+
+    if (currentOpacity <= minOpacity) {
+      // Move to permanent log and remove from visible box
+      permanentLog.push(entry.textContent);
+      entry.remove();
+    } else {
+      entry.style.opacity = currentOpacity;
+    }
+  });
+
+  requestAnimationFrame(fadeLogEntries);
+}
+
+// Start the fade loop
+fadeLogEntries();
+
+
+// ==== LOG MODAL ====
+// ==== BIG LOG MODAL ====
+const viewLogBtn = document.getElementById('view-log-btn');
+const logModal = document.getElementById('log-modal');
+const closeLogModal = document.getElementById('close-log-modal');
+const fullLogDiv = document.getElementById('full-log');
+
+// Open modal and populate with permanent log entries
+viewLogBtn.addEventListener('click', () => {
+  fullLogDiv.innerHTML = ""; // clear previous content
+
+  permanentLog.forEach(msg => {
+    const entry = document.createElement('div');
+    entry.textContent = msg;
+    fullLogDiv.appendChild(entry);
+  });
+
+  logModal.style.display = "block";
+});
+
+// Close modal
+closeLogModal.addEventListener('click', () => {
+  logModal.style.display = "none";
+});
+
+// Close modal if clicking outside the content box
+window.addEventListener('click', (event) => {
+  if (event.target === logModal) {
+    logModal.style.display = "none";
+  }
+});
+
+
+
+
 
 // ==== THEME HANDLER ====
 function applyTheme(theme) {
@@ -138,6 +209,10 @@ function applyTheme(theme) {
   root.style.setProperty('--button-color', theme.button);
   root.style.setProperty('--button-hover', theme.hover);
   root.style.setProperty('--accent-color', theme.accent);
+  const modalContent = document.getElementbById('log-modal-content');
+  modalContent.style.backgroundColor = theme.panel;
+  modalContent.style.color = theme.text;
+  modalContent.style.borderColor = theme.border;
 }
 
 // ==== INIT ====

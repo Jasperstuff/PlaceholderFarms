@@ -23,9 +23,22 @@
       <button id="reset-btn" title="Erase all progress and start over">Reset Progress</button>
     </section>
 
-    <section id="log"></section>
-  </main>
+<!-- Main log box -->
+<section id="log"></section>
 
+<!-- Button to view full log -->
+<button id="view-log-btn">View Full Log</button>
+
+<!-- Modal for permanent log -->
+<div id="log-modal">
+  <div id="log-modal-content">
+    <span id="close-log-modal">&times;</span>
+    <h3>Full Log:</h3>
+    <div id="full-log"></div>
+  </div>
+</div>
+
+  
   <div id="saveNotice">Progress saved!</div>
 
   <script src="main.js"></script>
