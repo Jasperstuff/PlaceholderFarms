@@ -8,10 +8,22 @@
 </head>
 <body>
   <main> 
+  
     
+    
+    <!-- save button -->
     <button id ="manual-save-btn" title="Save game">Save</button>
     
-    <h1>🌾 Idle Farmstead</h1>
+    <!-- debug menu -->
+ <div id="debug-menu">
+   <button id="debug-toggle">&#9776;</button>
+   <div id="debug-options">
+     <button id="debug-add-1000">+1000 current crop</button>
+   </div>
+  </div>
+   
+    
+    <h1>Idle Farmstead</h1>
 
     <section id="status">
       <h2 id="current-crop">Current Crop: Wheat 🌾</h2>
@@ -19,19 +31,37 @@
       <div id="harvester-count">Harvesters: 0</div>
     </section>
 
+<!-- button row-->
+    
     <section id="actions">
       <button id="harvest-btn" title="Harvest your current crop manually">Harvest</button>
       <button id="buy-auto" title="Buy an auto-harvester to automate your farming" disabled>Buy Auto-Harvester (10 Wheat)</button>
-      <button id="switch-crop" title="Switch which crops you'd like to grow" disabled>Switch Crop</button>
-      <button id="reset-btn" title="Erase all progress and start over">Reset Progress</button>
-    </section>
-
+      
+      
+      
+</section>
+    
+<!-- Switch crop button -->    
+<div id="crop-selector">
+  <button id="prev-crop" title="Previous crop">◀</button>
+  <div id="current-crop-display">Your current crop is: 🌾 Wheat</div>
+  <button id="next-crop" title="Next crop">▶</button>
+    </div>
+    
 <!-- Main log box -->
 <section id="log"></section>
 
 <!-- Button to view full log -->
+  <div id="log-button">
 <button id="view-log-btn">View Full Log</button>
-
+ </div>
+    
+<!-- reset button -->
+<div id ="reset-button">    
+  <button id="reset-btn" title="Erase all progress and start over">Reset</button>
+    </div>
+  
+  
 <!-- Modal for permanent log -->
 <div id="log-modal">
   <div id="log-modal-content">
@@ -47,3 +77,4 @@
   <script src="main.js"></script>
 </body>
 </html>
+

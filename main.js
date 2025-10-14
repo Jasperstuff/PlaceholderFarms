@@ -9,12 +9,12 @@ let crops = {
     unlocked: true,
     autoHarvestRate: 2000,
     theme: {
-      bg: "linear-gradient(to bottom, #e3d8b2, #d2c498)",
+      bg: "linear-gradient(to bottom, #F8E5A5, #EAD38E)",
       panel: "#f7f1dc",
       border: "#bda96b",
       text: "#3a2e1f",
-      button: "#88c057",
-      hover: "#7ab14f",
+      button: "#c2a67c",
+      hover: "#ad946d",
       accent: "#f1b24a"
     }
   },
@@ -35,7 +35,45 @@ let crops = {
       hover: "#d69930",
       accent: "#fdd36a"
     }
+  },
+  potato: {
+  name: "Potato",
+  emoji: "🥔",
+  amount: 0,
+  autoHarvesters: 0,
+  harvesterCost: 500,
+  unlocked: false,
+  autoHarvestRate: 3000,
+  theme: {
+    bg: "linear-gradient(to bottom, #f2e3d3, #d9b79c)",
+    panel: "#f5e6d1",
+    border: "#c79c70",
+    text: "#5a3d2c",
+    button: "#d8a76f",
+    hover: "#c88e56",
+    accent: "#f1c57c"
   }
+ },
+cucumber: {
+  name: "Cucumber",
+  emoji: "🥒",
+  amount: 0,
+  autoHarvesters: 0,
+  harvesterCost: 300,
+  unlocked: false,
+  autoHarvestRate: 3500,
+  theme: {
+    bg: "linear-gradient(to bottom, #d3f2d3, #a3d9a5)",
+    panel: "#e0f5e0",
+    border: "#7fc87f",
+    text: "#2e4f2e",
+    button: "#6cc26c",
+    hover: "#55a055",
+    accent: "#88d588"
+  }
+}
+
+
 };
 
 let currentCrop = "wheat";
@@ -47,7 +85,6 @@ const manualSaveBtn = document.getElementById('manual-save-btn');
 const cropCount = document.getElementById('crop-count');
 const harvesterCount = document.getElementById('harvester-count');
 const currentCropLabel = document.getElementById('current-crop');
-const switchCropBtn = document.getElementById('switch-crop');
 const log = document.getElementById('log');
 
 // ==== CORE FUNCTIONS ====
@@ -72,17 +109,74 @@ buyAutoBtn.addEventListener('click', () => {
   }
 });
 
-switchCropBtn.addEventListener('click', () => {
-  if (currentCrop === "wheat" && crops.corn.unlocked) {
-    currentCrop = "corn";
-    logMessage(`🌽 Switched to growing Corn!`);
+
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!===== DEBUG MENU TOGGLE =====
+//////////////////////////////////////////////////// DELETE ME BEFORE LIVE
+const debugToggle = document.getElementById('debug-toggle');
+const debugOptions = document.getElementById('debug-options');
+
+debugToggle.addEventListener('click', () => {
+  if (debugOptions.style.display === 'block') {
+    debugOptions.style.display = 'none';
   } else {
-    currentCrop = "wheat";
-    logMessage(`🌾 Switched back to growing Wheat!`);
+    debugOptions.style.display = 'block';
   }
+});
+
+const debugAdd1000 = document.getElementById('debug-add-1000');
+if (debugAdd1000) {
+  debugAdd1000.addEventListener('click', () => {
+    // add 1000 to the currently selected crop
+    if (typeof currentCrop === 'string' && crops[currentCrop]) {
+      crops[currentCrop].amount = (crops[currentCrop].amount || 0) + 1000;
+      updateUI();
+      logMessage(`🔧 Debug: +1000 ${crops[currentCrop].name}`);
+    } else {
+      console.warn('Debug add: currentCrop or crops not available.');
+    }
+  });
+}
+
+////////////////////////////////////////////////////////////////////////
+
+// ==== Crop rotation =====
+const cropOrder = ["wheat", "corn", "potato", "cucumber"];
+const prevCropBtn = document.getElementById('prev-crop');
+const nextCropBtn = document.getElementById('next-crop');
+const currentCropDisplay = document.getElementById('current-crop-display');
+
+function updateCropDisplay() {
+  const crop = crops[currentCrop];
+  currentCropDisplay.textContent = `Your current crop is: ${crop.emoji} ${crop.name}`;
+}
+
+// Previous crop button
+prevCropBtn.addEventListener('click', () => {
+  let index = cropOrder.indexOf(currentCrop);
+  do {
+    index = (index - 1 + cropOrder.length) % cropOrder.length;
+  } while (!crops[cropOrder[index]].unlocked);
+  currentCrop = cropOrder[index];
   applyTheme(crops[currentCrop].theme);
+  updateCropDisplay();
   updateUI();
 });
+
+// Next crop button
+nextCropBtn.addEventListener('click', () => {
+  let index = cropOrder.indexOf(currentCrop);
+  do {
+    index = (index + 1) % cropOrder.length;
+  } while (!crops[cropOrder[index]].unlocked);
+  currentCrop = cropOrder[index];
+  applyTheme(crops[currentCrop].theme);
+  updateCropDisplay();
+  updateUI();
+});
+
+// Call once on load
+updateCropDisplay();
 
 // ==== RESET BUTTON ====
 const resetBtn = document.getElementById('reset-btn');
@@ -90,6 +184,7 @@ resetBtn.addEventListener('click', () => {
   const confirmReset = confirm("Are you sure you want to reset all progress? This cannot be undone.");
   if (confirmReset) {
     localStorage.removeItem('idleFarmsteadSave');
+    permanentLog = [];
     location.reload();
   }
 });
@@ -107,11 +202,24 @@ setInterval(() => {
 
 // ==== UNLOCK LOGIC ====
 function checkUnlocks() {
-  if (!crops.corn.unlocked && crops.wheat.amount >= 100) {
-    crops.corn.unlocked = true;
-    switchCropBtn.disabled = false;
-    logMessage(`🌽 You unlocked Corn! Switch crops to start farming it.`);
-  }
+  const wheat = crops.wheat;
+  const corn= crops.corn;
+  const potato = crops.potato;
+if (!crops.corn.unlocked && crops.wheat.amount >= 100) {
+  crops.corn.unlocked = true;
+  logMessage(`🌽 Corn unlocked!`);
+}
+
+if (!crops.potato.unlocked && crops.corn.amount >= 200) {
+  crops.potato.unlocked = true;
+  logMessage(`🥔 Potatoes unlocked!`);
+}
+
+if (!crops.cucumber.unlocked && crops.potato.amount >= 300) {
+  crops.cucumber.unlocked = true;
+  logMessage(`🥒 Cucumbers unlocked!`);
+}
+
 }
 
 // ==== UI UPDATE ====
@@ -122,7 +230,6 @@ function updateUI() {
   buyAutoBtn.textContent = `Buy Auto-Harvester (${crop.harvesterCost} ${crop.name})`;
   buyAutoBtn.disabled = crop.amount < crop.harvesterCost;
   currentCropLabel.textContent = `Current Crop: ${crop.name} ${crop.emoji}`;
-  switchCropBtn.disabled = !crops.corn.unlocked;
 }
 
 // ==== LOG ====
@@ -164,10 +271,6 @@ function fadeLogEntries() {
   requestAnimationFrame(fadeLogEntries);
 }
 
-// Start the fade loop
-fadeLogEntries();
-
-
 // ==== LOG MODAL ====
 const viewLogBtn = document.getElementById('view-log-btn');
 const logModal = document.getElementById('log-modal');
@@ -203,15 +306,11 @@ function closeModal() {
 }
                                
 // Close modal if clicking outside the content box
-closeLogModal.addEventListener('click', closeModal);
 window.addEventListener('click', (event) => {
   if (event.target === logModal) {
     closeModal();
   }
 });
-
-
-
 
 
 // ==== THEME HANDLER ====
@@ -259,14 +358,20 @@ function loadGame() {
   const saved = localStorage.getItem('idleFarmsteadSave');
   if (saved) {
     const data = JSON.parse(saved);
-    crops = data.crops;
+    // Merge loaded crops with default crops
+    Object.keys(crops).forEach(key => {
+      if (data.crops[key] !== undefined) {
+        crops[key] = data.crops[key];
+      }
+    });
     currentCrop = data.currentCrop;
     permanentLog = data.permanentLog || [];
   }
 }
 
-
 // ==== INIT ====
 loadGame();
+fadeLogEntries();
 applyTheme(crops[currentCrop].theme);
 updateUI();
+

@@ -1,11 +1,11 @@
 :root {
   /* Default: Wheat Theme */
-  --bg-color: linear-gradient(to bottom, #e3d8b2, #d2c498);
+  --bg-color: linear-gradient(to bottom, #F8E5A5, #EAD38E);
   --panel-color: #f7f1dc;
   --border-color: #bda96b;
   --text-color: #3a2e1f;
-  --button-color: #88c057;
-  --button-hover: #7ab14f;
+  --button-color: #c2a67c;
+  --button-hover: #ad946d; 
   --accent-color: #f1b24a;
 }
 
@@ -36,6 +36,10 @@ h1 {
 
 #status {
   margin-bottom: 20px;
+}
+
+#actions {
+  text-align: center;
 }
 
 #crop-count, #harvester-count {
@@ -74,21 +78,37 @@ button:disabled {
   transform: none;
 }
 
-/* ------------Crop Switch Button ------------*/
-
-#switch-crop {
-  background: var(--accent-color);
+.secondary-buttons {
+  margin-top: 1em;
 }
 
-#switch-crop:hover {
-  filter: brightness(0.9);
+.secondary-buttons button {
+  margin: 0.25em;
 }
 
-#current-crop {
-  font-size: 22px;
-  margin-bottom: 15px;
-  color: var(--text-color);
-  transition: color 1s ease;
+/* ------------Crop Switch stuff ------------*/
+
+#crop-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1em;
+  gap: 10px;
+}
+
+#crop-selector button {
+  padding: 6px 12px;
+  font-size: 20px;
+  border-radius: 6px;
+}
+
+#current-crop-display {
+  padding: 8px 12px;
+  background: var(--bg-color);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  min-width: 180px;
+  text-align: center;
 }
 
 /* ------------Save button ----------- */
@@ -102,6 +122,69 @@ button:disabled {
   font-size: 24px;
   border-radius: 6px;
   z-index: 200;
+}
+/* !!!!!!!!------------debug menu -----*/
+/* ------be sure to delete me before final!! ----------- */
+
+#debug-menu {
+  position: fixed;
+  right: 10px;
+  z-index: 300;
+  text-align: right;
+}
+
+#debug-toggle {
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 32px;
+  cursor: pointer;
+}
+
+#debug-options {
+  top: 40px;
+  display: none;
+  background: #eee;
+  color: #000;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 5px;
+  text-align: left;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+#debug-options label {
+  display: block;
+  margin: 5px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* END OF DEBUG END OF DEBUG END OF DEBUG END OF DEBUG END OF DEBUG */
+
+
+
+/* ------------Reset button ----------- */
+
+#reset-btn {
+  background: #e89b61;
+  position: static;
+  padding: 8px 12px;
+  font-size: 24px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+#reset-btn:hover {
+  background: #d88542;
+  transform: scale(1.05);
+  box-shadow: 0 0 6px rgba(0,0,0,0.15);
 }
 
 /* ------------Save Notice ------------*/
@@ -146,18 +229,6 @@ button:disabled {
   opacity: 1;
   transition: opacity 1s linear;
   margin-bottom: 4px;
-}
-
-@keyframes fadeOut { 
-  0% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
 }
 
 /* ------------Big Log ------------*/
