@@ -1,104 +1,125 @@
-// ==== GAME STATE ====
-let crops = {
-  wheat: {
-    name: "Wheat",
-    emoji: "🌾",
-    amount: 0,
-    autoHarvesters: 0,
-    harvesterCost: 10,
-    unlocked: true,
-    autoHarvestRate: 2000,
-    theme: {
-      bg: "linear-gradient(to bottom, #F8E5A5, #EAD38E)",
-      panel: "#f7f1dc",
-      border: "#bda96b",
-      text: "#3a2e1f",
-      button: "#c2a67c",
-      hover: "#ad946d",
-      accent: "#f1b24a"
-    }
-  },
-  corn: {
-    name: "Corn",
-    emoji: "🌽",
-    amount: 0,
-    autoHarvesters: 0,
-    harvesterCost: 100,
-    unlocked: false,
-    autoHarvestRate: 2500,
-    theme: {
-      bg: "linear-gradient(to bottom, #ffe680, #f2c14e)",
-      panel: "#fff6cf",
-      border: "#d1a73b",
-      text: "#5a4419",
-      button: "#e0a53e",
-      hover: "#d69930",
-      accent: "#fdd36a"
-    }
-  },
-  potato: {
-  name: "Potato",
-  emoji: "🥔",
-  amount: 0,
-  autoHarvesters: 0,
-  harvesterCost: 500,
-  unlocked: false,
-  autoHarvestRate: 3000,
-  theme: {
-    bg: "linear-gradient(to bottom, #f2e3d3, #d9b79c)",
-    panel: "#f5e6d1",
-    border: "#c79c70",
-    text: "#5a3d2c",
-    button: "#d8a76f",
-    hover: "#c88e56",
-    accent: "#f1c57c"
-  }
- },
-cucumber: {
-  name: "Cucumber",
-  emoji: "🥒",
-  amount: 0,
-  autoHarvesters: 0,
-  harvesterCost: 300,
-  unlocked: false,
-  autoHarvestRate: 3500,
-  theme: {
-    bg: "linear-gradient(to bottom, #d3f2d3, #a3d9a5)",
-    panel: "#e0f5e0",
-    border: "#7fc87f",
-    text: "#2e4f2e",
-    button: "#6cc26c",
-    hover: "#55a055",
-    accent: "#88d588"
+// ======================================================
+// IDLE FARMSTEAD — MAIN SCRIPT
+// v0.1
+// ======================================================
+
+// ==== 1. CROP DEFINITIONS ====
+let crops = {};        // Object: { wheat: {...}, corn: {...}, etc. }
+let cropOrder = [];     // Array: ["wheat", "corn", "potato", "cucumber"]
+
+async function loadCrops() {
+  try {
+    const response = await fetch("crops.json");
+    if (!response.ok) throw new Error("Failed to load crop data!");
+    const data = await response.json();
+
+    // Convert array to object for easier lookups
+    crops = {};
+    cropOrder = [];
+
+    data.forEach(crop => {
+      crops[crop.key] = crop;    // Store by key (e.g., crops["wheat"])
+      cropOrder.push(crop.key);  // Keep track of order for upgrades
+    });
+
+    console.log("✅ Crops loaded:", crops);
+  } catch (error) {
+    console.error("❌ Error loading crops:", error);
   }
 }
 
-
-};
-
 let currentCrop = "wheat";
+let permanentLog = [];
 
-// ==== UI ELEMENTS ====
-const harvestBtn = document.getElementById('harvest-btn');
-const buyAutoBtn = document.getElementById('buy-auto');
-const manualSaveBtn = document.getElementById('manual-save-btn');
-const cropCount = document.getElementById('crop-count');
-const harvesterCount = document.getElementById('harvester-count');
-const currentCropLabel = document.getElementById('current-crop');
-const log = document.getElementById('log');
+// ======================================================
+// 2. DOM ELEMENTS
+// ======================================================
+// ==== ELEMENT REFERENCES ====
+const cropCount = document.getElementById("crop-count");
+const harvesterCount = document.getElementById("harvester-count");
+const buyAutoBtn = document.getElementById("buy-auto");
+const nextUpgradeBtn = document.getElementById("next-upgrade-btn");
+const currentCropLabel = document.getElementById("current-crop");
+const currentCropDisplay = document.getElementById("current-crop-display");
+const resetBtn = document.getElementById("reset-btn");
+const log = document.getElementById("log");
+const viewLogBtn = document.getElementById("view-log-btn");
+const logModal = document.getElementById("log-modal");
+const closeLogModal = document.getElementById("close-log-modal");
+const fullLogDiv = document.getElementById("full-log");
+const manualSaveBtn = document.getElementById("manual-save-btn");
+const saveNotice = document.getElementById("saveNotice");
+const prevCropBtn = document.getElementById("prev-crop-btn");
+const nextCropBtn = document.getElementById("next-crop-btn");
+const cropClicker = document.getElementById("crop-clicker");
 
-// ==== CORE FUNCTIONS ====
-manualSaveBtn.addEventListener('click', () => {
-  saveAndShowNotice();
+//Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug
+const debugToggle = document.getElementById("debug-toggle");
+const debugOptions = document.getElementById("debug-options");
+debugToggle.addEventListener("click", () => {
+  debugOptions.style.display = debugOptions.style.display === "block" ? "none" : "block";
 });
 
-harvestBtn.addEventListener('click', () => {
-  crops[currentCrop].amount++;
-  checkUnlocks();
+const debugAdd1000Btn = document.getElementById("debug-add-1000");
+
+debugAdd1000Btn.addEventListener("click", () => {
+  const crop = crops[currentCrop];
+  if (!crop) return; // safety check
+  crop.amount += 1000;
+  logMessage(`💰 Added 1000 ${crop.name}!`);
   updateUI();
+  updateCropClicker();
 });
 
-buyAutoBtn.addEventListener('click', () => {
+
+//Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug
+
+// ======================================================
+// 3. CORE GAME FUNCTIONS
+// ======================================================
+
+// Save the current game state
+function saveGame() {
+  const saveData = { crops, currentCrop, permanentLog };
+  localStorage.setItem("idleFarmsteadSave", JSON.stringify(saveData));
+}
+
+// Manual save with on-screen notice
+manualSaveBtn.addEventListener("click", saveAndShowNotice);
+function saveAndShowNotice() {
+  saveGame();
+  logMessage("💾 Game saved!");
+  saveNotice.classList.add("show");
+  setTimeout(() => saveNotice.classList.remove("show"), 1000);
+}
+
+// UI update for crop & harvester info
+function updateUI() {
+  const crop = crops[currentCrop];
+  cropCount.textContent = `${crop.name}: ${Math.floor(crop.amount)}`;
+  harvesterCount.textContent = `Harvesters: ${crop.autoHarvesters}`;
+  buyAutoBtn.textContent = `Buy Auto-Harvester (${crop.harvesterCost} ${crop.name})`;
+  buyAutoBtn.disabled = crop.amount < crop.harvesterCost;
+  currentCropLabel.textContent = `Current Crop: ${crop.name} ${crop.emoji}`;
+  updateNextUpgradeButton();
+}
+
+// Basic log entry system
+function logMessage(msg) {
+  permanentLog.push(msg); // add to permanent log
+  const entry = document.createElement("div");
+  entry.classList.add("log-entry");
+  entry.style.opacity = 1;
+  entry.textContent = msg;
+  log.prepend(entry);
+  if (log.children.length > 20) log.removeChild(log.lastChild);
+}
+
+
+// ======================================================
+// 4. HARVESTING & AUTOMATION
+// ======================================================
+buyAutoBtn.addEventListener("click", () => {
   const crop = crops[currentCrop];
   if (crop.amount >= crop.harvesterCost) {
     crop.amount -= crop.harvesterCost;
@@ -109,269 +130,275 @@ buyAutoBtn.addEventListener('click', () => {
   }
 });
 
-
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!===== DEBUG MENU TOGGLE =====
-//////////////////////////////////////////////////// DELETE ME BEFORE LIVE
-const debugToggle = document.getElementById('debug-toggle');
-const debugOptions = document.getElementById('debug-options');
-
-debugToggle.addEventListener('click', () => {
-  if (debugOptions.style.display === 'block') {
-    debugOptions.style.display = 'none';
-  } else {
-    debugOptions.style.display = 'block';
-  }
-});
-
-const debugAdd1000 = document.getElementById('debug-add-1000');
-if (debugAdd1000) {
-  debugAdd1000.addEventListener('click', () => {
-    // add 1000 to the currently selected crop
-    if (typeof currentCrop === 'string' && crops[currentCrop]) {
-      crops[currentCrop].amount = (crops[currentCrop].amount || 0) + 1000;
-      updateUI();
-      logMessage(`🔧 Debug: +1000 ${crops[currentCrop].name}`);
-    } else {
-      console.warn('Debug add: currentCrop or crops not available.');
-    }
-  });
-}
-
-////////////////////////////////////////////////////////////////////////
-
-// ==== Crop rotation =====
-const cropOrder = ["wheat", "corn", "potato", "cucumber"];
-const prevCropBtn = document.getElementById('prev-crop');
-const nextCropBtn = document.getElementById('next-crop');
-const currentCropDisplay = document.getElementById('current-crop-display');
-
+// ======================================================
+// 5. CROP ROTATION
+// ======================================================\
 function updateCropDisplay() {
   const crop = crops[currentCrop];
   currentCropDisplay.textContent = `Your current crop is: ${crop.emoji} ${crop.name}`;
 }
 
-// Previous crop button
-prevCropBtn.addEventListener('click', () => {
+prevCropBtn.addEventListener("click", () => {
   let index = cropOrder.indexOf(currentCrop);
   do {
     index = (index - 1 + cropOrder.length) % cropOrder.length;
   } while (!crops[cropOrder[index]].unlocked);
+
   currentCrop = cropOrder[index];
-  applyTheme(crops[currentCrop].theme);
+
+  // Apply theme first
+  if (crops[currentCrop] && crops[currentCrop].theme) {
+    applyTheme(crops[currentCrop].theme);
+  }
+
+  // Then update display and UI
   updateCropDisplay();
   updateUI();
+  updateCropClicker();
 });
 
-// Next crop button
-nextCropBtn.addEventListener('click', () => {
+
+nextCropBtn.addEventListener("click", () => {
   let index = cropOrder.indexOf(currentCrop);
   do {
     index = (index + 1) % cropOrder.length;
   } while (!crops[cropOrder[index]].unlocked);
+
   currentCrop = cropOrder[index];
-  applyTheme(crops[currentCrop].theme);
+
+  // Apply theme first
+  if (crops[currentCrop] && crops[currentCrop].theme) {
+    applyTheme(crops[currentCrop].theme);
+  }
+
+  // Then update display and UI
   updateCropDisplay();
   updateUI();
+  updateCropClicker();
 });
 
-// Call once on load
-updateCropDisplay();
 
-// ==== RESET BUTTON ====
-const resetBtn = document.getElementById('reset-btn');
-resetBtn.addEventListener('click', () => {
+function getNextUnlockableCrop() {
+  // Find the first crop that is locked but has an unlock condition
+  for (const key of cropOrder) {
+    const crop = crops[key];
+    if (!crop.unlocked && crop.unlockThreshold) {
+      const prevCrop = crops[crop.unlockThreshold.prevCrop];
+      if (prevCrop && prevCrop.unlocked) {
+        return crop;
+      }
+    }
+  }
+  return null;
+}
+
+
+
+// Crop Clicker function
+cropClicker.addEventListener("click", () => {
+  crops[currentCrop].amount++;
+  checkUnlocks();
+  updateUI();
+  updateCropClicker(); // refresh emoji (optional)
+});
+
+// Update the crop clicker emoji
+function updateCropClicker() {
+  const crop = crops[currentCrop]; // fixed typo
+  const clickerDiv = document.getElementById("crop-clicker"); // fixed typo
+  clickerDiv.textContent = crop.emoji;
+}
+
+// ======================================================
+// 6. UPGRADES & UNLOCKS
+// ======================================================
+function updateNextUpgradeButton() {
+  const nextCrop = getNextUnlockableCrop();
+
+  // Always make the button visible
+  nextUpgradeBtn.style.opacity = 1;
+  nextUpgradeBtn.style.visibility = "visible";
+  nextUpgradeBtn.disabled = true;
+
+  if (!nextCrop) {
+    // No crops available to unlock yet
+    nextUpgradeBtn.textContent = "No upgrades available";
+    nextUpgradeBtn.style.background = "#888"; // gray fallback
+    return;
+  }
+
+  // Get previous crop and requirement
+  const prevCrop = crops[nextCrop.unlockThreshold?.prevCrop];
+  const requiredAmount = nextCrop.unlockThreshold?.amount || 0;
+
+  // Update text to show unlock info
+  nextUpgradeBtn.textContent = `Unlock ${nextCrop.name} (${requiredAmount} ${prevCrop?.name || "?"})`;
+
+  // Enable when player has enough
+  if (prevCrop && prevCrop.amount >= requiredAmount) {
+    nextUpgradeBtn.disabled = false;
+    if (nextCrop.theme && nextCrop.theme.button) {
+      nextUpgradeBtn.style.background = nextCrop.theme.button;
+    } else {
+      nextUpgradeBtn.style.background = "#4CAF50"; // fallback green
+    }
+  } else {
+    nextUpgradeBtn.disabled = true;
+    nextUpgradeBtn.style.background = "#888"; // gray disabled
+  }
+}
+
+
+
+nextUpgradeBtn.addEventListener("click", () => {
+  const nextCrop = getNextUnlockableCrop();
+  if (!nextCrop) return;
+  const prevCrop = crops[nextCrop.unlockThreshold?.prevCrop];
+  if (prevCrop.amount >= nextCrop.harvesterCost) {
+    prevCrop.amount -= nextCrop.harvesterCost;
+    nextCrop.unlocked = true;
+    nextCrop.availableToUnlock = false;
+    currentCrop = nextCrop.key;
+    applyTheme(nextCrop.theme);
+    logMessage(`🌱 You unlocked ${nextCrop.name}!`);
+    updateCropDisplay();
+    updateUI();
+  }
+});
+
+function checkUnlocks() {
+  Object.values(crops).forEach(crop => {
+    if (!crop.unlocked && crop.unlockThreshold) {
+      const prev = crops[crop.unlockThreshold.prevCrop];
+      if (prev && prev.amount >= crop.unlockThreshold.amount) {
+        // no need to set availableToUnlock
+        logMessage(`🌱 ${crop.name} is available to unlock!`);
+        updateNextUpgradeButton();
+      }
+    }
+  });
+}
+
+
+// ======================================================
+// 7. THEME & SAVE / LOAD SYSTEM
+// ======================================================
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.style.setProperty("--bg-color", theme.bg);
+  root.style.setProperty("--panel-color", theme.panel);
+  root.style.setProperty("--border-color", theme.border);
+  root.style.setProperty("--text-color", theme.text);
+  root.style.setProperty("--button-color", theme.button);
+  root.style.setProperty("--button-hover", theme.hover);
+  root.style.setProperty("--accent-color", theme.accent);
+
+  const modalContent = document.getElementById("log-modal-content");
+  if (modalContent) {
+    modalContent.style.backgroundColor = theme.panel;
+    modalContent.style.color = theme.text;
+    modalContent.style.borderColor = theme.border;
+  }
+}
+
+function loadGame() {
+  const saved = localStorage.getItem("idleFarmsteadSave");
+  if (saved) {
+    const data = JSON.parse(saved);
+    Object.keys(crops).forEach(key => {
+      if (data.crops[key]) crops[key] = data.crops[key];
+    });
+    currentCrop = data.currentCrop || "wheat";
+    permanentLog = data.permanentLog || [];
+  }
+}
+
+// Autosave every 90 seconds
+setInterval(() => {
+  saveGame();
+  logMessage("💾 Game saved! (autosave)");
+}, 90000);
+
+// ======================================================
+// 8. RESET & IDLE LOOP
+// ======================================================
+resetBtn.addEventListener("click", () => {
   const confirmReset = confirm("Are you sure you want to reset all progress? This cannot be undone.");
   if (confirmReset) {
-    localStorage.removeItem('idleFarmsteadSave');
+    localStorage.removeItem("idleFarmsteadSave");
     permanentLog = [];
     location.reload();
   }
 });
 
-
-// ==== IDLE LOOP ====
 setInterval(() => {
-  Object.keys(crops).forEach(key => {
-    const crop = crops[key];
+  Object.values(crops).forEach(crop => {
     crop.amount += crop.autoHarvesters;
   });
   checkUnlocks();
   updateUI();
 }, 1000);
 
-// ==== UNLOCK LOGIC ====
-function checkUnlocks() {
-  const wheat = crops.wheat;
-  const corn= crops.corn;
-  const potato = crops.potato;
-if (!crops.corn.unlocked && crops.wheat.amount >= 100) {
-  crops.corn.unlocked = true;
-  logMessage(`🌽 Corn unlocked!`);
-}
-
-if (!crops.potato.unlocked && crops.corn.amount >= 200) {
-  crops.potato.unlocked = true;
-  logMessage(`🥔 Potatoes unlocked!`);
-}
-
-if (!crops.cucumber.unlocked && crops.potato.amount >= 300) {
-  crops.cucumber.unlocked = true;
-  logMessage(`🥒 Cucumbers unlocked!`);
-}
-
-}
-
-// ==== UI UPDATE ====
-function updateUI() {
-  const crop = crops[currentCrop];
-  cropCount.textContent = `${crop.name}: ${Math.floor(crop.amount)}`;
-  harvesterCount.textContent = `Harvesters: ${crop.autoHarvesters}`;
-  buyAutoBtn.textContent = `Buy Auto-Harvester (${crop.harvesterCost} ${crop.name})`;
-  buyAutoBtn.disabled = crop.amount < crop.harvesterCost;
-  currentCropLabel.textContent = `Current Crop: ${crop.name} ${crop.emoji}`;
-}
-
-// ==== LOG ====
-const minOpacity = 0.1; // minimum opacity for oldest entry
-const maxOpacity = 1;   // opacity for newest entry
-const baseFadeSpeed = 0.002; // amount to reduce opacity per frame
-
-let permanentLog = [];
-
-function logMessage(msg) {
-  const entry = document.createElement('div');
-  entry.classList.add('log-entry');
-  entry.style.opacity = maxOpacity; // start fully visible
-  entry.textContent = msg;
-  log.prepend(entry);
-  if (log.children.length > 20) log.removeChild(log.lastChild);
-}
-
-// Cascading fade function
-function fadeLogEntries() {
-  const entries = Array.from(log.children);
-  entries.forEach((entry, index) => {
-    let currentOpacity = parseFloat(entry.style.opacity);
-    if (isNaN(currentOpacity)) currentOpacity = maxOpacity;
-
-    // Older entries fade faster (index = 0 is newest, highest index is oldest)
-    const fadeMultiplier = 1 + (index / entries.length) * 2; // older = faster
-    currentOpacity -= baseFadeSpeed * fadeMultiplier;
-
-    if (currentOpacity <= minOpacity) {
-      // Move to permanent log and remove from visible box
-      permanentLog.push(entry.textContent);
-      entry.remove();
-    } else {
-      entry.style.opacity = currentOpacity;
-    }
-  });
-
-  requestAnimationFrame(fadeLogEntries);
-}
-
-// ==== LOG MODAL ====
-const viewLogBtn = document.getElementById('view-log-btn');
-const logModal = document.getElementById('log-modal');
-const closeLogModal = document.getElementById('close-log-modal');
-const fullLogDiv = document.getElementById('full-log');
-
-// Open modal and populate with permanent log entries
-viewLogBtn.addEventListener('click', () => {
-  fullLogDiv.innerHTML = ""; // clear previous content
+// ======================================================
+// 9. LOG MODAL
+// ======================================================
+viewLogBtn.addEventListener("click", () => {
+  fullLogDiv.innerHTML = "";
   permanentLog.forEach(msg => {
-    const entry = document.createElement('div');
+    const entry = document.createElement("div");
     entry.textContent = msg;
     fullLogDiv.appendChild(entry);
   });
-
-  logModal.classList.add('show');
+  logModal.classList.add("show");
   logModal.style.display = "block";
 });
 
-// Close modal
-closeLogModal.addEventListener('click', () => {
-  logModal.classList.remove('show');
-  logModal.addEventListener('transitionend', function handler(e) {
-    if (e.propertyName === 'opacity') {
-      logModal.style.display = 'none';
-      logModal.removeEventListener('transitionend', handler);
-    }                         
+closeLogModal.addEventListener("click", () => {
+  logModal.classList.remove("show");
+  logModal.addEventListener("transitionend", function handler(e) {
+    if (e.propertyName === "opacity") {
+      logModal.style.display = "none";
+      logModal.removeEventListener("transitionend", handler);
+    }
   });
 });
-                               
-function closeModal() {
-  logModal.classList.remove('show');
-}
-                               
-// Close modal if clicking outside the content box
-window.addEventListener('click', (event) => {
+
+window.addEventListener("click", (event) => {
   if (event.target === logModal) {
-    closeModal();
+    logModal.classList.remove("show");
   }
 });
 
+// ======================================================
+// 10. INIT
+// ======================================================
+async function startGame() {
+  await loadCrops();
+  loadGame();
 
-// ==== THEME HANDLER ====
-function applyTheme(theme) {
-  const root = document.documentElement;
-  root.style.setProperty('--bg-color', theme.bg);
-  root.style.setProperty('--panel-color', theme.panel);
-  root.style.setProperty('--border-color', theme.border);
-  root.style.setProperty('--text-color', theme.text);
-  root.style.setProperty('--button-color', theme.button);
-  root.style.setProperty('--button-hover', theme.hover);
-  root.style.setProperty('--accent-color', theme.accent);
-  const modalContent = document.getElementById('log-modal-content');
-  modalContent.style.backgroundColor = theme.panel;
-  modalContent.style.color = theme.text;
-  modalContent.style.borderColor = theme.border;
-}
-
-// ==== SAVE GAME ====
-function saveGame() {
-  const saveData = {
-    crops: crops,
-    currentCrop: currentCrop, 
-    permanentLog: permanentLog
-  };
-  localStorage.setItem('idleFarmsteadSave', JSON.stringify(saveData));
-}
-
-//autosave every 90 secs
-setInterval(() => {
- saveGame();
-  logMessage("💾 Game saved! (autosave)");
-}, 90000); 
-
-function saveAndShowNotice() {
-  saveGame();
-  logMessage("💾 Game saved!");
-  const notice = document.getElementById('saveNotice');
-  notice.classList.add('show');
-  setTimeout(() => notice.classList.remove('show'), 1000);
-}
-
-// ==== LOAD GAME ====
-function loadGame() {
-  const saved = localStorage.getItem('idleFarmsteadSave');
-  if (saved) {
-    const data = JSON.parse(saved);
-    // Merge loaded crops with default crops
-    Object.keys(crops).forEach(key => {
-      if (data.crops[key] !== undefined) {
-        crops[key] = data.crops[key];
-      }
-    });
-    currentCrop = data.currentCrop;
-    permanentLog = data.permanentLog || [];
+  if (!crops[currentCrop]) {
+    currentCrop = cropOrder[0];
   }
+
+  if (crops[currentCrop] && crops[currentCrop].theme) {
+    applyTheme(crops[currentCrop].theme);
+  }
+
+  updateCropDisplay();
+  updateCropClicker();
+  updateUI();
+
+  // Check unlocks immediately to show the next upgrade button if available
+  checkUnlocks();
+  updateNextUpgradeButton();
+
+  logMessage("Welcome back to Idle Farmstead!");
 }
 
-// ==== INIT ====
-loadGame();
-fadeLogEntries();
-applyTheme(crops[currentCrop].theme);
-updateUI();
+
+// Start the game
+startGame();
+checkUnlocks();
+updadeNextUpgradeButton();
+
 

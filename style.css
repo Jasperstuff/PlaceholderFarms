@@ -16,7 +16,7 @@ body {
   text-align: center;
   padding: 50px;
   margin: 0;
-  transition: background 1s ease, color 1s ease;
+  transition: background 0.1s ease, color 0.1s ease;
 }
 
 main {
@@ -26,7 +26,7 @@ main {
   display: inline-block;
   padding: 30px 60px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  transition: background 1s ease, border-color 1s ease;
+  transition: background 0.11s ease, border-color 0.1s ease;
 }
 
 h1 {
@@ -86,6 +86,29 @@ button:disabled {
   margin: 0.25em;
 }
 
+/* ----------- Next crop --------------------*/
+
+#next-upgrade-button {
+  text-align: center;
+  margin: 20px 0;
+}
+
+#next-upgrade-btn {
+  font-size: 20px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  color: #fff;
+  background: #4CAF50;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.1s ease;
+}
+
+#next-upgrade-btn:disabled {
+  background: #888;
+  cursor: not-allowed;
+}
+
 /* ------------Crop Switch stuff ------------*/
 
 #crop-selector {
@@ -109,6 +132,32 @@ button:disabled {
   border-radius: 8px;
   min-width: 180px;
   text-align: center;
+}
+
+/* ------------ Crop Clicker ----------*/
+
+#crop-clicker {
+  font-size: 12rem;
+  text-align: center;
+  user-select: none;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.15s ease-in-out;
+  background: var(--button-color, #d1b280);
+  border: 6px solid var(--boarder-color, #bda27e);
+  border-radius: 1rem;
+  padding: 1rem 2rem;
+  box-shadow: 0 8px 0 var(--border-color, #bda27e);
+}
+
+#crop-clicker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 0 var(--accent-color, #c29f6d);
+}
+
+#crop-clicker:active {
+  transform: scale(0.9) translateY(6px);
+  box-shadow: 0 4px 0 var(--border-color, #bda27e);
 }
 
 /* ------------Save button ----------- */
@@ -269,7 +318,7 @@ button:disabled {
   background-color: var(--panel-color);
   color: var(--text-color);
   border: 2px solid var(--border-color);
-  transition: transform 0.4s ease, background 0.4s ease, color 0.5s ease, border-color 0.5s ease;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   transform: scale(0.8);
 }
 
@@ -293,3 +342,4 @@ button:disabled {
   border-bottom: 1px solid rgba(0,0,0,0.2);
   padding-bottom: 3px;
 }
+
