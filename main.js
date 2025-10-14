@@ -43,6 +43,7 @@ let currentCrop = "wheat";
 // ==== UI ELEMENTS ====
 const harvestBtn = document.getElementById('harvest-btn');
 const buyAutoBtn = document.getElementById('buy-auto');
+const manualSaveBtn = document.getElementById('manual-save-btn');
 const cropCount = document.getElementById('crop-count');
 const harvesterCount = document.getElementById('harvester-count');
 const currentCropLabel = document.getElementById('current-crop');
@@ -50,6 +51,10 @@ const switchCropBtn = document.getElementById('switch-crop');
 const log = document.getElementById('log');
 
 // ==== CORE FUNCTIONS ====
+manualSaveBtn.addEventListener('click', () => {
+  saveAndShowNotice();
+});
+
 harvestBtn.addEventListener('click', () => {
   crops[currentCrop].amount++;
   checkUnlocks();
@@ -164,7 +169,6 @@ fadeLogEntries();
 
 
 // ==== LOG MODAL ====
-// ==== BIG LOG MODAL ====
 const viewLogBtn = document.getElementById('view-log-btn');
 const logModal = document.getElementById('log-modal');
 const closeLogModal = document.getElementById('close-log-modal');
@@ -173,25 +177,36 @@ const fullLogDiv = document.getElementById('full-log');
 // Open modal and populate with permanent log entries
 viewLogBtn.addEventListener('click', () => {
   fullLogDiv.innerHTML = ""; // clear previous content
-
   permanentLog.forEach(msg => {
     const entry = document.createElement('div');
     entry.textContent = msg;
     fullLogDiv.appendChild(entry);
   });
 
+  logModal.classList.add('show');
   logModal.style.display = "block";
 });
 
 // Close modal
 closeLogModal.addEventListener('click', () => {
-  logModal.style.display = "none";
+  logModal.classList.remove('show');
+  logModal.addEventListener('transitionend', function handler(e) {
+    if (e.propertyName === 'opacity') {
+      logModal.style.display = 'none';
+      logModal.removeEventListener('transitionend', handler);
+    }                         
+  });
 });
-
+                               
+function closeModal() {
+  logModal.classList.remove('show');
+}
+                               
 // Close modal if clicking outside the content box
+closeLogModal.addEventListener('click', closeModal);
 window.addEventListener('click', (event) => {
   if (event.target === logModal) {
-    logModal.style.display = "none";
+    closeModal();
   }
 });
 
@@ -209,13 +224,50 @@ function applyTheme(theme) {
   root.style.setProperty('--button-color', theme.button);
   root.style.setProperty('--button-hover', theme.hover);
   root.style.setProperty('--accent-color', theme.accent);
-  const modalContent = document.getElementbById('log-modal-content');
+  const modalContent = document.getElementById('log-modal-content');
   modalContent.style.backgroundColor = theme.panel;
   modalContent.style.color = theme.text;
   modalContent.style.borderColor = theme.border;
 }
 
+// ==== SAVE GAME ====
+function saveGame() {
+  const saveData = {
+    crops: crops,
+    currentCrop: currentCrop, 
+    permanentLog: permanentLog
+  };
+  localStorage.setItem('idleFarmsteadSave', JSON.stringify(saveData));
+}
+
+//autosave every 90 secs
+setInterval(() => {
+ saveGame();
+  logMessage("💾 Game saved! (autosave)");
+}, 90000); 
+
+function saveAndShowNotice() {
+  saveGame();
+  logMessage("💾 Game saved!");
+  const notice = document.getElementById('saveNotice');
+  notice.classList.add('show');
+  setTimeout(() => notice.classList.remove('show'), 1000);
+}
+
+// ==== LOAD GAME ====
+function loadGame() {
+  const saved = localStorage.getItem('idleFarmsteadSave');
+  if (saved) {
+    const data = JSON.parse(saved);
+    crops = data.crops;
+    currentCrop = data.currentCrop;
+    permanentLog = data.permanentLog || [];
+  }
+}
+
+
 // ==== INIT ====
+loadGame();
 applyTheme(crops[currentCrop].theme);
 updateUI();
 
