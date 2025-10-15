@@ -9,7 +9,7 @@ let cropOrder = [];     // Array: ["wheat", "corn", "potato", "cucumber"]
 
 async function loadCrops() {
   try {
-    const response = await fetch("crops.json");
+    const response = await fetch("json/crops.json");
     if (!response.ok) throw new Error("Failed to load crop data!");
     const data = await response.json();
 
@@ -23,6 +23,8 @@ async function loadCrops() {
     });
 
     console.log("✅ Crops loaded:", crops);
+    console.log("Current crop key:", currentCrop);
+
   } catch (error) {
     console.error("❌ Error loading crops:", error);
   }
@@ -32,15 +34,15 @@ let currentCrop = "wheat";
 let permanentLog = [];
 
 // ======================================================
-// 2. DOM ELEMENTS
+// 2. DOM and DEBUG
 // ======================================================
 // ==== ELEMENT REFERENCES ====
 const cropCount = document.getElementById("crop-count");
+if (!cropCount) console.warn("Element #crop-count not found");
 const harvesterCount = document.getElementById("harvester-count");
 const buyAutoBtn = document.getElementById("buy-auto");
 const nextUpgradeBtn = document.getElementById("next-upgrade-btn");
 const currentCropLabel = document.getElementById("current-crop");
-const currentCropDisplay = document.getElementById("current-crop-display");
 const resetBtn = document.getElementById("reset-btn");
 const log = document.getElementById("log");
 const viewLogBtn = document.getElementById("view-log-btn");
@@ -49,9 +51,8 @@ const closeLogModal = document.getElementById("close-log-modal");
 const fullLogDiv = document.getElementById("full-log");
 const manualSaveBtn = document.getElementById("manual-save-btn");
 const saveNotice = document.getElementById("saveNotice");
-const prevCropBtn = document.getElementById("prev-crop-btn");
-const nextCropBtn = document.getElementById("next-crop-btn");
 const cropClicker = document.getElementById("crop-clicker");
+const cropEmoji = document.getElementById("crop-emoji");
 
 //Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug
 const debugToggle = document.getElementById("debug-toggle");
@@ -68,10 +69,9 @@ debugAdd1000Btn.addEventListener("click", () => {
   crop.amount += 1000;
   logMessage(`💰 Added 1000 ${crop.name}!`);
   updateUI();
+  updateCropSelectorBar();
   updateCropClicker();
 });
-
-
 //Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug Debug
 
 // ======================================================
@@ -80,9 +80,14 @@ debugAdd1000Btn.addEventListener("click", () => {
 
 // Save the current game state
 function saveGame() {
-  const saveData = { crops, currentCrop, permanentLog };
-  localStorage.setItem("idleFarmsteadSave", JSON.stringify(saveData));
+  try {
+    const saveData = { crops, currentCrop, permanentLog };
+    localStorage.setItem("idleFarmsteadSave", JSON.stringify(saveData));
+  } catch (e) {
+    console.error("Failed to save game:", e);
+  }
 }
+
 
 // Manual save with on-screen notice
 manualSaveBtn.addEventListener("click", saveAndShowNotice);
@@ -96,6 +101,7 @@ function saveAndShowNotice() {
 // UI update for crop & harvester info
 function updateUI() {
   const crop = crops[currentCrop];
+  if (!crop) return; //safety check
   cropCount.textContent = `${crop.name}: ${Math.floor(crop.amount)}`;
   harvesterCount.textContent = `Harvesters: ${crop.autoHarvesters}`;
   buyAutoBtn.textContent = `Buy Auto-Harvester (${crop.harvesterCost} ${crop.name})`;
@@ -106,11 +112,25 @@ function updateUI() {
 
 // Basic log entry system
 function logMessage(msg) {
-  permanentLog.push(msg); // add to permanent log
+  const now = new Date();
+  
+  //convert time to 12-hr AM/PM format
+  let hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  
+  // timestamp
+  const timestamp = `${hours}:${minutes} ${ampm}`;
+  
+  // add to permanent log
+  permanentLog.push(`[${timestamp}] ${msg}`); 
+  
   const entry = document.createElement("div");
   entry.classList.add("log-entry");
   entry.style.opacity = 1;
-  entry.textContent = msg;
+  entry.textContent = `[${timestamp}] ${msg}`;
   log.prepend(entry);
   if (log.children.length > 20) log.removeChild(log.lastChild);
 }
@@ -121,97 +141,89 @@ function logMessage(msg) {
 // ======================================================
 buyAutoBtn.addEventListener("click", () => {
   const crop = crops[currentCrop];
+  if (!crop) return;
   if (crop.amount >= crop.harvesterCost) {
     crop.amount -= crop.harvesterCost;
     crop.autoHarvesters++;
     crop.harvesterCost = Math.round(crop.harvesterCost * 1.5);
     logMessage(`🧑‍🌾 Hired a new ${crop.name} harvester! (${crop.autoHarvesters} total)`);
     updateUI();
+    updateCropSelectorBar();
   }
 });
 
 // ======================================================
 // 5. CROP ROTATION
-// ======================================================\
+// ======================================================
+
+function refreshAllUI(){
+  updateCropDisplay();
+  updateCropClicker();
+  updateCropSelectorBar();
+  updateUI();
+}
+
 function updateCropDisplay() {
   const crop = crops[currentCrop];
-  currentCropDisplay.textContent = `Your current crop is: ${crop.emoji} ${crop.name}`;
+  if (crop) {
+    currentCropLabel.textContent = `Your current crop is: ${crop.emoji} ${crop.name}`;
+  } else {
+    currentCropLabel.textContent = `Your current crop is: ❓ Unknown`;
+    console.warn("Invalid crop key:", currentCrop);
+  }
 }
-
-prevCropBtn.addEventListener("click", () => {
-  let index = cropOrder.indexOf(currentCrop);
-  do {
-    index = (index - 1 + cropOrder.length) % cropOrder.length;
-  } while (!crops[cropOrder[index]].unlocked);
-
-  currentCrop = cropOrder[index];
-
-  // Apply theme first
-  if (crops[currentCrop] && crops[currentCrop].theme) {
-    applyTheme(crops[currentCrop].theme);
-  }
-
-  // Then update display and UI
-  updateCropDisplay();
-  updateUI();
-  updateCropClicker();
-});
-
-
-nextCropBtn.addEventListener("click", () => {
-  let index = cropOrder.indexOf(currentCrop);
-  do {
-    index = (index + 1) % cropOrder.length;
-  } while (!crops[cropOrder[index]].unlocked);
-
-  currentCrop = cropOrder[index];
-
-  // Apply theme first
-  if (crops[currentCrop] && crops[currentCrop].theme) {
-    applyTheme(crops[currentCrop].theme);
-  }
-
-  // Then update display and UI
-  updateCropDisplay();
-  updateUI();
-  updateCropClicker();
-});
-
-
-function getNextUnlockableCrop() {
-  // Find the first crop that is locked but has an unlock condition
-  for (const key of cropOrder) {
-    const crop = crops[key];
-    if (!crop.unlocked && crop.unlockThreshold) {
-      const prevCrop = crops[crop.unlockThreshold.prevCrop];
-      if (prevCrop && prevCrop.unlocked) {
-        return crop;
-      }
-    }
-  }
-  return null;
-}
-
-
-
-// Crop Clicker function
-cropClicker.addEventListener("click", () => {
-  crops[currentCrop].amount++;
-  checkUnlocks();
-  updateUI();
-  updateCropClicker(); // refresh emoji (optional)
-});
 
 // Update the crop clicker emoji
 function updateCropClicker() {
-  const crop = crops[currentCrop]; // fixed typo
-  const clickerDiv = document.getElementById("crop-clicker"); // fixed typo
-  clickerDiv.textContent = crop.emoji;
+  const crop = crops[currentCrop];
+  if (!crop) return;
+  cropEmoji.textContent = crop.emoji;
 }
+
+
+function updateCropSelectorBar() {
+  const bar = document.getElementById("crop-selector-bar");
+  bar.innerHTML = "";
+  
+  cropOrder.forEach(key => {
+    const crop = crops[key];
+    if (!crop) return;
+    
+    const emojiDiv = document.createElement("div");
+    emojiDiv.textContent = crop.emoji;
+    emojiDiv.classList.add("crop-selector-emoji");
+    
+    if (!crop.unlocked) {
+      emojiDiv.classList.add("locked");
+      emojiDiv.title = "Locked. Unlock previous crop first!";
+    } else {
+      emojiDiv.addEventListener("click", () => {
+        currentCrop = key;
+        refreshAllUI();
+        if (crops[currentCrop]?.theme) applyTheme(crops[currentCrop].theme);
+      });
+    }
+    
+    bar.appendChild(emojiDiv);
+  });
+}
+
+// clicky clicky
+cropClicker.addEventListener("click", () => {
+  const crop = crops[currentCrop];
+  if (!crop) return;
+  crop.amount++;
+  checkUnlocks();
+  refreshAllUI();
+});
 
 // ======================================================
 // 6. UPGRADES & UNLOCKS
 // ======================================================
+function getNextUnlockableCrop() {
+  return Object.values(crops).find(crop => !crop.unlocked && crop.unlockThreshold);
+}
+
 function updateNextUpgradeButton() {
   const nextCrop = getNextUnlockableCrop();
 
@@ -249,7 +261,7 @@ function updateNextUpgradeButton() {
 }
 
 
-
+// unlock upgrade button handler
 nextUpgradeBtn.addEventListener("click", () => {
   const nextCrop = getNextUnlockableCrop();
   if (!nextCrop) return;
@@ -258,11 +270,15 @@ nextUpgradeBtn.addEventListener("click", () => {
     prevCrop.amount -= nextCrop.harvesterCost;
     nextCrop.unlocked = true;
     nextCrop.availableToUnlock = false;
+    nextCrop.availableNotified = false;
     currentCrop = nextCrop.key;
     applyTheme(nextCrop.theme);
     logMessage(`🌱 You unlocked ${nextCrop.name}!`);
     updateCropDisplay();
     updateUI();
+    updateCropSelectorBar();
+    updateCropClicker();
+    animateCropEmoji(cropAnimations[nextCrop.key]);
   }
 });
 
@@ -271,9 +287,11 @@ function checkUnlocks() {
     if (!crop.unlocked && crop.unlockThreshold) {
       const prev = crops[crop.unlockThreshold.prevCrop];
       if (prev && prev.amount >= crop.unlockThreshold.amount) {
-        // no need to set availableToUnlock
-        logMessage(`🌱 ${crop.name} is available to unlock!`);
-        updateNextUpgradeButton();
+        if (!crop.availableNotified) {
+          logMessage(`🌱 ${crop.name} is available to unlock!`);
+          crop.availableNotified = true;
+          updateNextUpgradeButton();
+        }
       }
     }
   });
@@ -293,6 +311,18 @@ function applyTheme(theme) {
   root.style.setProperty("--button-hover", theme.hover);
   root.style.setProperty("--accent-color", theme.accent);
 
+  const borderCol = theme.buttonBorder || theme.border;
+
+  // ===== Crop Clicker Button =====
+  const cropBtn = document.getElementById("crop-clicker");
+  if (cropBtn) {
+    cropBtn.style.backgroundColor = theme.button;
+    cropBtn.style.color = theme.text;
+    cropBtn.style.borderColor = borderCol;
+    cropBtn.style.boxShadow = `0 8px 0 ${borderCol}`;
+  }
+
+  // ===== Modal =====
   const modalContent = document.getElementById("log-modal-content");
   if (modalContent) {
     modalContent.style.backgroundColor = theme.panel;
@@ -301,23 +331,70 @@ function applyTheme(theme) {
   }
 }
 
+
 function loadGame() {
   const saved = localStorage.getItem("idleFarmsteadSave");
-  if (saved) {
-    const data = JSON.parse(saved);
-    Object.keys(crops).forEach(key => {
-      if (data.crops[key]) crops[key] = data.crops[key];
-    });
-    currentCrop = data.currentCrop || "wheat";
-    permanentLog = data.permanentLog || [];
+  if (!saved) return;
+  const data = JSON.parse(saved);
+  
+  //Make sure crops exist before applying savedata
+  if (data.crops) {
+    for (const key of Object.keys(data.crops)) {
+      if(crops[key]) {
+        Object.assign(crops[key], data.crops[key]);
+      } else {
+        console.warn("Unknown crop in the field: ${key}");
+      }
+    }
   }
+  if (data.currentCrop && crops[data.currentCrop]) {
+    currentCrop = data.currentCrop;
+  } else {
+    currentCrop = cropOrder[0];
+  }
+  permanentLog = data.permanentLog || [];
+  
+  console.log("✅ Game loaded successfully.");
+  console.log("Current crop key after load:", currentCrop);
+  console.log("Crops object keys:", Object.keys(crops));
 }
 
-// Autosave every 90 seconds
+// ===== shimmer effect =====
+const title = document.querySelector("h1");
+let shimmerPlaying = false;
+
+function playShimmer() {
+  // prevent spam
+  if (shimmerPlaying) return;
+  
+  // Remove class if it exists to reset the animation
+  title.classList.remove("shimmer");
+
+  // Force reflow to restart animation
+  void title.offsetWidth;
+
+  // Add class to play animation
+  title.classList.add("shimmer");
+  
+  setTimeout(() => {
+    shimmerPlaying = false;
+  }, 1500);
+}
+
+// Play shimmer on page load
+window.addEventListener("load", () => {
+  playShimmer();
+});
+
+// Autosave every 120 seconds and shimmer
 setInterval(() => {
   saveGame();
   logMessage("💾 Game saved! (autosave)");
-}, 90000);
+  playShimmer();
+}, 120000);
+
+// Hover shimmer (only once per hover) 
+title.addEventListener("mouseenter", () => playShimmer());
 
 // ======================================================
 // 8. RESET & IDLE LOOP
@@ -337,6 +414,7 @@ setInterval(() => {
   });
   checkUnlocks();
   updateUI();
+  updateCropSelectorBar();
 }, 1000);
 
 // ======================================================
@@ -370,26 +448,60 @@ window.addEventListener("click", (event) => {
 });
 
 // ======================================================
-// 10. INIT
+//       Animations
+// ======================================================
+
+// Animation map
+const cropAnimations = {
+  wheat: "bounce 1s ease-in-out",
+  corn: "shake 0.5s linear",
+  potato: "spin 2s linear",
+  cucumber: "wiggle 0.7s ease-in-out"
+};
+
+let emojiAnimating = false;
+
+// Core function to animate emoji
+function animateCropEmoji(animationName) {
+  if (!animationName) return;
+  if (emojiAnimating) return; // prevent spamming
+
+  emojiAnimating = true;
+  cropEmoji.style.animation = animationName;
+
+  // Remove animation after it finishes
+  const duration = parseFloat(animationName.match(/\d+(\.\d+)?s/)[0]) * 1000;
+  setTimeout(() => {
+    cropEmoji.style.animation = "";
+    emojiAnimating = false;
+  }, duration);
+}
+
+
+// Optional: play once on hover
+cropClicker.addEventListener("mouseenter", () => {
+  const crop = crops[currentCrop];
+  animateCropEmoji(cropAnimations[crop.key]);
+});
+
+// ======================================================
+//     init
 // ======================================================
 async function startGame() {
-  await loadCrops();
-  loadGame();
+  await loadCrops(); //Load crops first
+  loadGame(); //Then load save data
 
-  if (!crops[currentCrop]) {
-    currentCrop = cropOrder[0];
-  }
+  if (!crops[currentCrop]) currentCrop = cropOrder[0];
 
-  if (crops[currentCrop] && crops[currentCrop].theme) {
+  if (crops[currentCrop]?.theme) {
     applyTheme(crops[currentCrop].theme);
   }
 
   updateCropDisplay();
   updateCropClicker();
   updateUI();
-
-  // Check unlocks immediately to show the next upgrade button if available
-  checkUnlocks();
+  updateCropSelectorBar();
+  checkUnlocks();   // Check unlocks immediately to show the next upgrade button if available
   updateNextUpgradeButton();
 
   logMessage("Welcome back to Idle Farmstead!");
@@ -398,7 +510,3 @@ async function startGame() {
 
 // Start the game
 startGame();
-checkUnlocks();
-updadeNextUpgradeButton();
-
-
