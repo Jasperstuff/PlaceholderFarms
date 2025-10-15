@@ -1,0 +1,91 @@
+[
+  {
+    "key": "wheat",
+    "name": "Wheat",
+    "emoji": "🌾",
+    "amount": 0,
+    "autoHarvesters": 0,
+    "harvesterCost": 10,
+    "unlocked": true,
+    "availableToUnlock": true,
+    "autoHarvestRate": 2000,
+    "unlockThreshold": null,
+    "theme": {
+      "bg": "#f5f2e7",
+      "panel": "#fffaf0",
+      "border": "#bda27e",
+      "text": "#4a3f2d",
+      "button": "#d1b280",
+      "buttonBorder": "#bda27e",
+      "hover": "#b69060",
+      "accent": "#c29f6d"
+    }
+  },
+  {
+    "key": "corn",
+    "name": "Corn",
+    "emoji": "🌽",
+    "amount": 0,
+    "autoHarvesters": 0,
+    "harvesterCost": 100,
+    "unlocked": false,
+    "availableToUnlock": false,
+    "autoHarvestRate": 2500,
+    "unlockThreshold": { "prevCrop": "wheat", "amount": 100 },
+    "theme": {
+      "bg": "#fffbe6",
+      "panel": "#fff9cc",
+      "border": "#d4c35b",
+      "buttonBorder": "#d4c35b",
+      "text": "#4d4a00",
+      "button": "#D4B32D",
+      "hover": "#e6c94f",
+      "accent": "#d4b700"
+    }
+  },
+  {
+    "key": "potato",
+    "name": "Potato",
+    "emoji": "🥔",
+    "amount": 0,
+    "autoHarvesters": 0,
+    "harvesterCost": 500,
+    "unlocked": false,
+    "availableToUnlock": false,
+    "autoHarvestRate": 3000,
+    "unlockThreshold": { "prevCrop": "corn", "amount": 200 },
+    "theme": {
+      "bg": "#f2ede2",
+      "panel": "#e8dccc",
+      "border": "#a67c52",
+      "buttonBorder": "#a67c52",
+      "text": "#3b2f2f",
+      "button": "#c49a6c",
+      "hover": "#b3885b",
+      "accent": "#8b5a2b"
+    }
+  },
+  {
+    "key": "cucumber",
+    "name": "Cucumber",
+    "emoji": "🥒",
+    "amount": 0,
+    "autoHarvesters": 0,
+    "harvesterCost": 300,
+    "unlocked": false,
+    "availableToUnlock": false,
+    "autoHarvestRate": 3500,
+    "unlockThreshold": { "prevCrop": "potato", "amount": 300 },
+    "theme": {
+      "bg": "#e8f5e9",
+      "panel": "#d0ebd0",
+      "border": "#7cb342",
+      "buttonBorder": "#7cb342",
+      "text": "#2e7d32",
+      "button": "#81c784",
+      "hover": "#66bb6a",
+      "accent": "#4caf50"
+    }
+  }
+]
+
