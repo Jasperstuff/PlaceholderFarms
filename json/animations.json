@@ -1,0 +1,14 @@
+{
+  "wheat": {
+    "animation": "bounce 1s ease-in-out infinite"
+  },
+  "corn": {
+    "animation": "shake 0.5s linear infinite"
+  },
+  "potato": {
+    "animation": "spin 2s linear infinite"
+  },
+  "cucumber": {
+    "animation": "wiggle 0.7s ease-in-out infinite"
+  }
+}
